@@ -1,0 +1,67 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Generate Stats Images
+
+# Controls when the action will run. Triggers the workflow on push events
+on:
+  push:
+    branches: [ master ]
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in
+# parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out repository under $GITHUB_WORKSPACE, so the job can access it
+    - uses: actions/checkout@v2
+
+    # Run using Python 3.8 for consistency and aiohttp
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: 'x64'
+
+    # Cache dependencies. From:
+    # https://github.com/actions/cache/blob/master/examples.md#python---pip
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    # Install dependencies with `pip`
+    - name: Install requirements
+      run: |
+        python3 -m pip install --upgrade pip setuptools wheel
+        python3 -m pip install -r requirements.txt
+
+    # Generate all statistics images
+    - name: Generate images
+      run: |
+        python3 --version
+        python3 generate_images.py
+      env:
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        EXCLUDED: ${{ secrets.EXCLUDED }}
+        EXCLUDED_LANGS: ${{ secrets.EXCLUDE_LANGS }}
+
+    # Commits all changed files to the repository
+    - name: Commit to the repo
+      run: |
+        git config --global user.name "jstrieb/github-stats"
+        git config --global user.email "github-stats[bot]@jstrieb.github.io"
+        git add .
+        # "echo" returns true so the build succeeds, even if no changed files
+        git commit -m 'Update generated files' || echo
+        git push
