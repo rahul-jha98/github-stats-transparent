@@ -7,7 +7,7 @@ on:
   push:
     branches: [ master ]
   schedule:
-    - cron: "0 * * * *"
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in
@@ -38,7 +38,8 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-
+    
+        
     # Install dependencies with `pip`
     - name: Install requirements
       run: |
@@ -57,11 +58,13 @@ jobs:
         EXCLUDED_LANGS: ${{ secrets.EXCLUDE_LANGS }}
 
     # Commits all changed files to the repository
-    - name: Commit to the repo
+    - name: Commit to the output branch of repo
       run: |
-        git config --global user.name "jstrieb/github-stats"
-        git config --global user.email "github-stats[bot]@jstrieb.github.io"
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git add .
+        git commit -m 'temp commit' || echo
+        git checkout output 2>/dev/null || git checkout --orphan output && git rm -rf . && git checkout main -- generated/
         # "echo" returns true so the build succeeds, even if no changed files
         git commit -m 'Update generated files' || echo
-        git push
+        git push origin output -f
