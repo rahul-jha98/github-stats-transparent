@@ -5,7 +5,7 @@ name: Generate Stats Images
 # Controls when the action will run. Triggers the workflow on push events
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
@@ -56,11 +56,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         EXCLUDED: ${{ secrets.EXCLUDED }}
         EXCLUDED_LANGS: ${{ secrets.EXCLUDE_LANGS }}
+        IGNORE_FORKED_REPOSITORIES: ${{ secrets.IGNORE_FORKED_REPOSITORIES }}
 
     # Commits all changed files to the repository
     - name: Commit to the output branch of repo
       run: |
-        git config --global user.name "github-actions[bot]"
+        git config --global user.name "github-stats[bot]"
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git add .
         git commit -m 'temp commit' || echo
