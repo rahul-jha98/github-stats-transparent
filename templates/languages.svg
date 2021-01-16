@@ -9,8 +9,8 @@ svg {
 #background {
   width: calc(100% - 10px);
   height: calc(100% - 10px);
-  fill: white;
-  stroke: rgb(225, 228, 232);
+  fill: #00000000;
+  stroke: #8B8B8B22;
   stroke-width: 1px;
   rx: 6px;
   ry: 6px;
@@ -27,8 +27,8 @@ h2 {
   line-height: 24px;
   font-size: 16px;
   font-weight: 600;
-  color: rgb(36, 41, 46);
-  fill: rgb(36, 41, 46);
+  color: rgb(72, 148, 224);
+  fill: rgb(72, 148, 224);
 }
 
 ul {
@@ -45,7 +45,7 @@ li {
   align-items: center;
   flex-wrap: nowrap;
   transform: translateX(-500%);
-  animation-duration: 2s;
+  animation-duration: 1s;
   animation-name: slideIn;
   animation-function: ease-in-out;
   animation-fill-mode: forwards;
@@ -64,7 +64,7 @@ div.ellipsis {
 }
 
 .octicon {
-  fill: rgb(88, 96, 105);
+  fill: rgb(248, 96, 105);
   margin-right: 0.5ch;
   vertical-align: top;
 }
@@ -73,25 +73,25 @@ div.ellipsis {
   display: flex;
   height: 8px;
   overflow: hidden;
-  background-color: rgb(225, 228, 232);
+  background-color: #80808080;
   border-radius: 6px;
   outline: 1px solid transparent;
   margin-bottom: 1em;
 }
 
 .progress-item {
-  outline: 2px solid rgb(225, 228, 232);
+  outline: 1px solid rgb(225, 228, 232);
   border-collapse: collapse;
 }
 
 .lang {
   font-weight: 600;
   margin-right: 4px;
-  color: rgb(36, 41, 46);
+  color: rgb(135, 135, 135);
 }
 
 .percent {
-  color: rgb(88, 96, 105)
+  color: rgb(150,150,150)
 }
 </style>
 <g transform="translate(5, 5)">
@@ -100,7 +100,7 @@ div.ellipsis {
 <foreignObject>
 <div xmlns="http://www.w3.org/1999/xhtml" class="ellipsis">
 
-<h2>Languages Used (By File Size)</h2>
+<h2>Most Used Languages</h2>
 
 <div>
 <span class="progress">
