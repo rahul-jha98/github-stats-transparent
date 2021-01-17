@@ -79,11 +79,6 @@ div.ellipsis {
   margin-bottom: 1em;
 }
 
-.progress-item {
-  outline: 1px solid rgb(225, 228, 232);
-  border-collapse: collapse;
-}
-
 .lang {
   font-weight: 600;
   margin-right: 4px;
