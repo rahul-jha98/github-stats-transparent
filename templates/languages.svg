@@ -89,7 +89,9 @@ div.ellipsis {
   color: rgb(150,150,150)
 }
 </style>
+<g>
 <rect x="5" y="5" id="background" />
+<g>
 <foreignObject x="21" y="17" width="318" height="176">
 <div xmlns="http://www.w3.org/1999/xhtml" class="ellipsis">
 
@@ -109,4 +111,6 @@ div.ellipsis {
 
 </div>
 </foreignObject>
+</g>
+</g>
 </svg>
