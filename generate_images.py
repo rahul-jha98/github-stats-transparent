@@ -41,7 +41,7 @@ async def generate_overview(s: Stats) -> None:
     changed = (await s.lines_changed)[0] + (await s.lines_changed)[1]
     output = re.sub("{{ lines_changed }}", f"{changed:,}", output)
     output = re.sub("{{ views }}", f"{await s.views:,}", output)
-    output = re.sub("{{ repos }}", f"{len(await s.repos):,}", output)
+    output = re.sub("{{ repos }}", f"{len(await s.all_repos):,}", output)
 
     generate_output_folder()
     with open("generated/overview.svg", "w") as f:
