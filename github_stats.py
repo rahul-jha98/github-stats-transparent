@@ -232,10 +232,12 @@ class Stats(object):
     def __init__(self, username: str, access_token: str,
                  session: aiohttp.ClientSession,
                  exclude_repos: Optional[Set] = None,
-                 exclude_langs: Optional[Set] = None):
+                 exclude_langs: Optional[Set] = None,
+                 ignore_forked_repos: bool = False):
         self.username = username
         self._exclude_repos = set() if exclude_repos is None else exclude_repos
         self._exclude_langs = set() if exclude_langs is None else exclude_langs
+        self._ignore_forked_repos = ignore_forked_repos
         self.queries = Queries(username, access_token, session)
 
         self._name = None
@@ -245,11 +247,7 @@ class Stats(object):
         self._languages = None
         self._repos = None
         self._lines_changed = None
-        self._views = None
-
-        self._ignore_forked_repositories = False
-        if len(os.getenv("IGNORE_FORKED_REPOSITORIES")) != 0:
-            self._ignore_forked_repositories = True
+        self._views = None        
 
     async def to_str(self) -> str:
         """
@@ -264,7 +262,7 @@ class Stats(object):
 Stargazers: {await self.stargazers:,}
 Forks: {await self.forks:,}
 All-time contributions: {await self.total_contributions:,}
-Repositories with contributions: {len(await self.repos)}
+Repositories with contributions: {len(await self.all_repos)}
 Lines of code added: {lines_changed[0]:,}
 Lines of code deleted: {lines_changed[1]:,}
 Lines of code changed: {lines_changed[0] + lines_changed[1]:,}
@@ -280,7 +278,8 @@ Languages:
         self._forks = 0
         self._languages = dict()
         self._repos = set()
-
+        self._ignored_repos = set()
+        
         next_owned = None
         next_contrib = None
         while True:
@@ -310,9 +309,14 @@ Languages:
                            .get("repositories", {}))
             
             repos = owned_repos.get("nodes", [])
-            if not self._ignore_forked_repositories:
+            if not self._ignore_forked_repos:
                 repos += contrib_repos.get("nodes", [])
-                     
+            else:
+                for repo in contrib_repos.get("nodes", []):
+                    name = repo.get("nameWithOwner")
+                    if name in self._ignored_repos or name in self._exclude_repos:
+                        continue
+                    self._ignored_repos.add(name)
 
             for repo in repos:
                 name = repo.get("nameWithOwner")
@@ -418,6 +422,19 @@ Languages:
         await self.get_stats()
         assert(self._repos is not None)
         return self._repos
+    
+    @property
+    async def all_repos(self) -> List[str]:
+        """
+        :return: list of names of user's repos with contributed repos included
+                irrespective of whether the ignore flag is set or not
+        """
+        if self._repos is not None and self._ignored_repos is not None:
+            return self._repos | self._ignored_repos
+        await self.get_stats()
+        assert(self._repos is not None)
+        assert(self._ignored_repos is not None)
+        return self._repos | self._ignored_repos
 
     @property
     async def total_contributions(self) -> int:
