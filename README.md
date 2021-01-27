@@ -1,17 +1,28 @@
-# [GitHub Stats Visualization](https://github.com/jstrieb/github-stats)
+# GitHub Stats Visualizations : Transparent
+> Generate visualizations of GitHub user and repository statistics using GitHub
+Actions.
 
-<a href="https://github.com/jstrieb/github-stats">
+<a href="https://github.com/rahul-jha98/github-stats-transparent">
 
-![](https://github.com/jstrieb/github-stats/blob/master/generated/overview.svg)
-![](https://github.com/jstrieb/github-stats/blob/master/generated/languages.svg)
+![](https://raw.githubusercontent.com/rahul-jha98/github-stats-transparent/output/generated/overview.svg)
+![](https://raw.githubusercontent.com/rahul-jha98/github-stats-transparent/output/generated/languages.svg)
 
 </a>
 
-Generate visualizations of GitHub user and repository statistics using GitHub
-Actions.
+> NOTE: This repository is my extension of the repo [jstrieb/github-stats](https://github.com/jstrieb/github-stats). This repo was meant to serve as a detached fork of his project. If you like this repository make sure you also star his repository to show appreciation for his work. 
 
-This project is currently a work-in-progress; there will always be more
-interesting stats to display.
+## Why Transparent
+With the introduction of dark mode in Github it has become difficult to set an image background that looks consistent with the background in both dark and light mode. 
+
+To solve this the most obvious solution was to make the background transparent. All that was left was to choose colors for text that makes it legible in light as well as dark background.
+
+After wasting a day playing with different color values finally settled on one. Hope you like it. 
+
+**In Light Mode**
+![](./readme_images/light.png)
+
+**In Dark Mode**
+![](./readme_images/dark.png)
 
 ## Background
 
