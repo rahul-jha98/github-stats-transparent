@@ -56,7 +56,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         EXCLUDED: ${{ secrets.EXCLUDED }}
         EXCLUDED_LANGS: ${{ secrets.EXCLUDE_LANGS }}
-        IGNORE_FORKED_REPOSITORIES: ${{ secrets.IGNORE_FORKED_REPOSITORIES }}
+        COUNT_STATS_FROM_FORKS: ${{ secrets.COUNT_STATS_FROM_FORKS }}
 
     # Commits all changed files to the repository
     - name: Commit to the output branch of repo
