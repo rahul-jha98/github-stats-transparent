@@ -36,9 +36,9 @@ anyone may be able to see the name of one or more private repositories.
    link](../../settings/secrets/actions) to go to the "Secrets" page.
    Otherwise, go to the "Settings" tab of the newly-created repository and go
    to the "Secrets" page (bottom left).
-
-   ![](https://raw.githubusercontent.com/rahul-jha98/github-stats-transparent/main/readme_images/Actions.png')
-
+   
+   ![](https://raw.githubusercontent.com/rahul-jha98/github-stats-transparent/main/readme_images/Actions.png)
+   
 4. Create a new secret with the name `ACCESS_TOKEN` and paste the copied
    personal access token as the value.
 
