@@ -65,6 +65,8 @@ async def generate_languages(s: Stats) -> None:
         color = data.get("color")
         color = color if color is not None else "#000000"
         ratio = [.98, .02]
+        if data.get("prop", 0) > 50:
+            ratio = [.99, .01]
         if i == len(sorted_languages) - 1:
             ratio = [1, 0]
         progress += (f'<span style="background-color: {color};'
