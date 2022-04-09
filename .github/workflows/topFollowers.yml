@@ -6,13 +6,15 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the output branch
   push:
-    branches: [ output ]
+    branches: [ master ]
   pull_request:
-    branches: [ output ]
+    branches: [ master ]
 
+  schedule: [{cron: "0 * * * *"}]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
+  push:
+    branches: ["master", "main"]
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
