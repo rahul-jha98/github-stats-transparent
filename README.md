@@ -41,7 +41,7 @@ anyone may be able to see the name of one or more private repositories.
    
 4. Check if "Read and write permissions" are enabled in Settings -> Actions -> General -> Workflow permissions
    
-   <img src='https://i.stack.imgur.com/A5EEk.png' height='250px'/>
+   <img src='readme_images/A5EEk.png' height='250px'/>
    
 5. Create a new secret with the name `ACCESS_TOKEN` and paste the copied
    personal access token as the value.
