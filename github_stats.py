@@ -3,7 +3,12 @@
 
 import asyncio
 import os
+import random
+import shutil
+import subprocess
+import tempfile
 from typing import Dict, List, Optional, Set, Tuple
+from urllib.parse import quote
 
 import aiohttp
 import requests
@@ -21,7 +26,7 @@ class Queries(object):
 
     def __init__(
         self,
-        username: str,
+        username: Optional[str],
         access_token: str,
         session: aiohttp.ClientSession,
         max_connections: int = 10,
@@ -68,16 +73,36 @@ class Queries(object):
         :param params: Query parameters to be passed to the API
         :return: deserialized REST JSON output
         """
+        _, result = await self.query_rest_response(path, params=params)
+        return dict() if result is None else result
+
+    async def query_rest_response(
+        self,
+        path: str,
+        params: Optional[Dict] = None,
+        max_attempts: int = 10,
+        retry_statuses: Optional[Set[int]] = None,
+    ) -> Tuple[int, object]:
+        """
+        Make a request to the REST API and return both the status and body.
+        :param path: API path to query
+        :param params: Query parameters to be passed to the API
+        :param max_attempts: maximum number of attempts before giving up
+        :param retry_statuses: HTTP statuses that should be retried
+        :return: (status code, deserialized REST JSON output)
+        """
         if params is None:
             params = dict()
         if path.startswith("/"):
             path = path[1:]
+        if retry_statuses is None:
+            retry_statuses = {202}
         headers = {
             "Authorization": f"token {self.access_token}",
         }
 
-        delay = 2.0
-        max_attempts = 10
+        last_status = 0
+        last_result: object = dict()
         for attempt in range(max_attempts):
             try:
                 async with self.semaphore:
@@ -86,40 +111,63 @@ class Queries(object):
                         headers=headers,
                         params=tuple(params.items()),
                     )
-                if r.status == 202:
+                last_status = r.status
+                if r.status == 204:
+                    return r.status, dict()
+
+                try:
+                    last_result = await r.json()
+                except ValueError:
+                    last_result = dict()
+
+                if r.status in retry_statuses and attempt + 1 < max_attempts:
+                    delay = random.uniform(0, 4)
                     print(
-                        f"{path} returned 202. Retrying in {delay:.0f}s"
+                        f"{path} returned {r.status}. Retrying in {delay:.1f}s"
                         f" (attempt {attempt + 1}/{max_attempts})..."
                     )
                     await asyncio.sleep(delay)
-                    delay = min(delay * 2, 60.0)
                     continue
-
-                result = await r.json()
-                if result is not None:
-                    return result
+                return last_status, last_result
             except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
                 print(f"aiohttp failed for rest query: {exc}")
                 # Fall back on non-async requests
                 async with self.semaphore:
-                    r = requests.get(
-                        f"https://api.github.com/{path}",
-                        headers=headers,
-                        params=tuple(params.items()),
-                        timeout=30,
-                    )
-                    if r.status_code == 202:
+                    try:
+                        r = requests.get(
+                            f"https://api.github.com/{path}",
+                            headers=headers,
+                            params=tuple(params.items()),
+                            timeout=30,
+                        )
+                    except Exception as sync_exc:
+                        print(f"requests failed for rest query: {sync_exc}")
+                        continue
+
+                    last_status = r.status_code
+                    if r.status_code == 204:
+                        return r.status_code, dict()
+
+                    try:
+                        last_result = r.json()
+                    except ValueError:
+                        last_result = dict()
+
+                    if r.status_code in retry_statuses and attempt + 1 < max_attempts:
+                        delay = random.uniform(0, 4)
                         print(
-                            f"{path} returned 202. Retrying in {delay:.0f}s"
+                            f"{path} returned {r.status_code}. Retrying in {delay:.1f}s"
                             f" (attempt {attempt + 1}/{max_attempts})..."
                         )
                         await asyncio.sleep(delay)
-                        delay = min(delay * 2, 60.0)
                         continue
-                    elif r.status_code == 200:
-                        return r.json()
-        print(f"Too many 202s for {path}. Data for this repository will be incomplete.")
-        return dict()
+                    return last_status, last_result
+
+        if last_status in retry_statuses:
+            print(
+                f"Too many {last_status}s for {path}. Falling back to git clone if applicable."
+            )
+        return last_status, last_result
 
     @staticmethod
     def repos_overview(
@@ -257,7 +305,7 @@ class Stats(object):
 
     def __init__(
         self,
-        username: str,
+        username: Optional[str],
         access_token: str,
         session: aiohttp.ClientSession,
         exclude_repos: Optional[Set] = None,
@@ -271,6 +319,10 @@ class Stats(object):
         self.queries = Queries(username, access_token, session)
         self._ignored_repos = set()
 
+        self._clone_semaphore = asyncio.Semaphore(3)
+        self._user_emails_cache: Optional[List[str]] = None
+
+        self._login = username
         self._name = None
         self._stargazers = None
         self._forks = None
@@ -320,23 +372,15 @@ Languages:
                 )
             )
             raw_results = raw_results if raw_results is not None else {}
+            viewer = raw_results.get("data", {}).get("viewer", {})
 
-            self._name = raw_results.get("data", {}).get("viewer", {}).get("name", None)
+            self._login = viewer.get("login", self._login)
+            self._name = viewer.get("name", None)
             if self._name is None:
-                self._name = (
-                    raw_results.get("data", {})
-                    .get("viewer", {})
-                    .get("login", "No Name")
-                )
+                self._name = viewer.get("login", "No Name")
 
-            contrib_repos = (
-                raw_results.get("data", {})
-                .get("viewer", {})
-                .get("repositoriesContributedTo", {})
-            )
-            owned_repos = (
-                raw_results.get("data", {}).get("viewer", {}).get("repositories", {})
-            )
+            contrib_repos = viewer.get("repositoriesContributedTo", {})
+            owned_repos = viewer.get("repositories", {})
 
             repos = owned_repos.get("nodes", [])
             if self._consider_forked_repos:
@@ -512,31 +556,163 @@ Languages:
         if self._lines_changed is not None:
             return self._lines_changed
 
-        async def fetch_contributions(repo: str) -> Tuple[int, int]:
-            r = await self.queries.query_rest(f"/repos/{repo}/stats/contributors")
+        # External contributed-to repos (all_repos) cause persistent 202s:
+        # their large commit histories overwhelm GitHub's stats computation.
+        repos = list(await self.repos)
+
+        results = await asyncio.gather(*[self._fetch_lines_changed(repo) for repo in repos])
+        total_additions = sum(r[0] for r in results)
+        total_deletions = sum(r[1] for r in results)
+        self._lines_changed = (total_additions, total_deletions)
+        return self._lines_changed
+
+    async def _get_login(self) -> str:
+        if self._login is not None:
+            return self._login
+        await self.get_stats()
+        if self._login is not None:
+            return self._login
+        return "x-access-token"
+
+    async def _fetch_lines_changed(self, repo: str) -> Tuple[int, int]:
+        status, response = await self.queries.query_rest_response(
+            f"/repos/{repo}/stats/contributors",
+            max_attempts=10,
+            retry_statuses={202, 403, 429},
+        )
+
+        if status == 200 and isinstance(response, list):
             additions = 0
             deletions = 0
-            for author_obj in r:
-                # Handle malformed response from the API by skipping this repo
+            login = await self._get_login()
+            for author_obj in response:
                 if not isinstance(author_obj, dict) or not isinstance(
                     author_obj.get("author", {}), dict
                 ):
                     continue
                 author = author_obj.get("author", {}).get("login", "")
-                if author != self.username:
+                if author != login:
                     continue
                 for week in author_obj.get("weeks", []):
                     additions += week.get("a", 0)
                     deletions += week.get("d", 0)
             return additions, deletions
 
-        results = await asyncio.gather(
-            *[fetch_contributions(repo) for repo in await self.all_repos]
+        if status in {202, 403, 429}:
+            return await self._get_lines_changed_from_git(repo)
+
+        if status not in {0, 204}:
+            print(f"Failed to get contribution data for {repo} (status: {status}).")
+        return 0, 0
+
+    async def _get_user_emails(self) -> List[str]:
+        if self._user_emails_cache is not None:
+            return self._user_emails_cache
+
+        status, response = await self.queries.query_rest_response(
+            "/user/emails",
+            max_attempts=1,
         )
-        total_additions = sum(r[0] for r in results)
-        total_deletions = sum(r[1] for r in results)
-        self._lines_changed = (total_additions, total_deletions)
-        return self._lines_changed
+        emails = []
+        if status == 200 and isinstance(response, list):
+            emails = [
+                email_obj.get("email")
+                for email_obj in response
+                if isinstance(email_obj, dict) and email_obj.get("email")
+            ]
+
+        if not emails:
+            login = await self._get_login()
+            print(
+                "Failed to get user emails. Falling back to the noreply address; "
+                "token may be missing user:email permission."
+            )
+            emails = [f"{login}@users.noreply.github.com"]
+
+        self._user_emails_cache = emails
+        return self._user_emails_cache
+
+    async def _get_lines_changed_from_git(self, repo: str) -> Tuple[int, int]:
+        if shutil.which("git") is None:
+            print("git is not installed. Skipping git fallback for lines changed.")
+            return 0, 0
+
+        login = await self._get_login()
+        emails = await self._get_user_emails()
+        print(f"Cloning {repo} to get lines changed...")
+        async with self._clone_semaphore:
+            additions, deletions = await asyncio.to_thread(
+                self._get_lines_changed_from_git_sync,
+                repo,
+                emails,
+                login,
+            )
+        print(
+            f"Got {additions + deletions} line(s) changed by {login} in {repo}"
+        )
+        return additions, deletions
+
+    def _get_lines_changed_from_git_sync(
+        self, repo: str, emails: List[str], login: str
+    ) -> Tuple[int, int]:
+        repo_name = repo.replace("/", "_")
+        safe_username = quote(login, safe="")
+        safe_token = quote(self.queries.access_token, safe="")
+        repo_url = f"https://{safe_username}:{safe_token}@github.com/{repo}.git"
+
+        with tempfile.TemporaryDirectory(prefix="github-stats-") as temp_dir:
+            repo_path = os.path.join(temp_dir, repo_name)
+            clone = subprocess.run(
+                [
+                    "git",
+                    "clone",
+                    "--bare",
+                    "--filter=blob:limit=1m",
+                    "--no-tags",
+                    "--single-branch",
+                    repo_url,
+                    repo_path,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
+            if clone.returncode != 0:
+                print(f"Failed to clone {repo} to compute lines changed.")
+                return 0, 0
+
+            log_command = ["git", "-C", repo_path, "log", "--numstat", "--pretty=tformat:"]
+            for email in emails:
+                log_command.extend(["--author", email])
+
+            log = subprocess.run(
+                log_command,
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
+            if log.returncode != 0:
+                print(f"Failed to inspect git history for {repo}.")
+                return 0, 0
+
+        additions = 0
+        deletions = 0
+        for line in log.stdout.splitlines():
+            if not line:
+                continue
+            parts = line.split("\t", 2)
+            if len(parts) < 2:
+                continue
+            try:
+                additions += int(parts[0])
+            except ValueError:
+                pass
+            try:
+                deletions += int(parts[1])
+            except ValueError:
+                pass
+
+        return additions, deletions
 
     @property
     async def views(self) -> int:
