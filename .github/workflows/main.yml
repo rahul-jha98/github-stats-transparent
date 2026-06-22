@@ -23,6 +23,15 @@ jobs:
     # Checks-out repository under $GITHUB_WORKSPACE, so the job can access it
     - uses: actions/checkout@v4
 
+    - name: Install JetBrains Mono font
+      run: |
+          sudo apt-get install -y wget
+          wget https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip
+          unzip JetBrainsMono-2.304.zip -d JetBrainsMono
+          sudo mkdir -p /usr/share/fonts/truetype/jetbrains
+          sudo cp JetBrainsMono/fonts/ttf/*.ttf /usr/share/fonts/truetype/jetbrains/
+          sudo fc-cache -f -v
+
     # Run using Python 3.8 for consistency and aiohttp
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
