@@ -25,7 +25,7 @@ jobs:
 
     # Set up UV to manage Python versions
     - name: Install uv and set python version
-      uses: astral-sh/setup-uv@v9.0.0
+      uses: astral-sh/setup-uv@v10.0.1
       with:
         enable-cache: true
         python-version: '3.12'
