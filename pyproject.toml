@@ -1,0 +1,11 @@
+[project]
+name = "github-stats-transparent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.13.2",
+    "requests>=2.32.5",
+    "uvloop>=0.22.1",
+]

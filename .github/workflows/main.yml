@@ -21,36 +21,18 @@ jobs:
     # Sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out repository under $GITHUB_WORKSPACE, so the job can access it
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
-    # Run using Python 3.8 for consistency and aiohttp
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+    # Set up UV to manage Python versions
+    - name: Install uv and set python version
+      uses: astral-sh/setup-uv@v10.0.1
       with:
+        enable-cache: true
         python-version: '3.12'
-        architecture: 'x64'
-
-    # Cache dependencies. From:
-    # https://github.com/actions/cache/blob/master/examples.md#python---pip
-    - uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
-        
-    # Install dependencies with `pip`
-    - name: Install requirements
-      run: |
-        python3 -m pip install --upgrade pip setuptools wheel
-        python3 -m pip install -r requirements.txt
 
     # Generate all statistics images
     - name: Generate images
-      run: |
-        python3 --version
-        python3 generate_images.py
+      run: uv run generate_images.py
       env:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
