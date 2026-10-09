@@ -25,7 +25,7 @@ anyone may be able to see the name of one or more private repositories.
 1. Create a personal access token (not the default GitHub Actions token) using
    the instructions
    [here](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
-   Personal access token must have permissions: `read:user` and `repo`. Copy
+   Personal access token must have permissions: `repo:status`, `public_repo` and `read:user`. Copy
    the access token when it is generated – if you lose it, you will have to
    regenerate the token.
 
@@ -37,17 +37,17 @@ anyone may be able to see the name of one or more private repositories.
    Otherwise, go to the "Settings" tab of the newly-created repository and go
    to the "Secrets" page (bottom left).
    
-   ![](https://raw.githubusercontent.com/rahul-jha98/github-stats-transparent/main/readme_images/Actions.png)
+   ![](/readme_images/Actions.png)
    
 4. Create a new secret with the name `ACCESS_TOKEN` and paste the copied
    personal access token as the value.
 
-   <img src='https://raw.githubusercontent.com/rahul-jha98/github-stats-transparent/main/readme_images/Token.png' height='250px'/>
+   <img src='/readme_images/Token.png' height='250px'/>
 
 5. If you want to ignore certain repos, add them (separated by commas) to a new
    secret—created as before—called `EXCLUDED`. 
 
-   <img src='https://raw.githubusercontent.com/rahul-jha98/github-stats-transparent/main/readme_images/Exclude.png' height='250px'/>
+   <img src='/readme_images/Exclude.png' height='250px'/>
 
 6. If you want to ignore certain languages, add them (separated by commas) to a new secret called 
    `EXCLUDED_LANGS`.
@@ -57,7 +57,7 @@ anyone may be able to see the name of one or more private repositories.
    forked repositories also you can do so by creating a new secret called `COUNT_STATS_FROM_FORKS`. 
    For the value you can put any random value because the action only checks if the secret is set or not.
 
-   <img src='https://raw.githubusercontent.com/rahul-jha98/github-stats-transparent/main/readme_images/Forks.png' height='250px'/>
+   <img src='/readme_images/Forks.png' height='250px'/>
 
 8. Go to the [Actions Page](../../actions?query=workflow%3A"Generate+Stats+Images") and press "Run
    Workflow" on the right side of the screen to generate images for the first
